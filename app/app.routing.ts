@@ -1,7 +1,6 @@
 import { ModuleWithProviders }  from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
-import {WelcomeComponent} from './home/welcome.component';
 
 const appRoutes: Routes = [
     {
@@ -10,8 +9,12 @@ const appRoutes: Routes = [
         pathMatch: 'full'
     },
     {
-        path: '/welcome',
-        component: WelcomeComponent
+        path: 'welcome',
+        loadChildren: 'app/home/welcome.module#WelcomeModule'
+    },
+    {
+        path: 'auth',
+        loadChildren: 'app/shared/auth/auth.module#AuthModule'
     }
 ];
 
