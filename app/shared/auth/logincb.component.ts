@@ -11,9 +11,9 @@ export class LoginCallbackComponent implements OnInit {
 
     constructor(private _router: Router) {
         let config: AuthServiceConfig = new AuthServiceConfig();
-        config.clientId = 'dddcf0c1-847e-4c32-b409-d9d81c4e86aa';
-        config.domainName = 'wmitb2cgermany.onmicrosoft.com';
-        config.policy = 'B2C_1_ng2azureadb2c_susi';
+        config.clientId = '<YOUR_APP_ID>';
+        config.domainName = '<YOUR_AD_DOMAIN>';
+        config.policy = '<YOUR_POLICY>';
         config.redirectUri = 'http://localhost:42901/auth/adcb';
         config.responseMode = 'fragment';
         config.responseType = 'code+id_token';
