@@ -44,11 +44,9 @@ describe('AppComponent with TCB', function () {
             TestBed.compileComponents()
                 .then(() => {
                     let fixture = TestBed.createComponent(AppComponent);
-                    //let appDOME1 = fixture.debugElement.children[0].nativeElement;
 
                     fixture.detectChanges();
 
-                    // let h1 = fixture.debugElement.query(el => el.name === 'h1').nativeElement;  // it works
                     let h1 = fixture.debugElement.query(By.css('.navbar-brand')).nativeElement;            // preferred
 
                     expect(h1.innerText).toMatch(/Azure AD/i, '<a class="navbar-brand"> should say something about "Azure AD"');

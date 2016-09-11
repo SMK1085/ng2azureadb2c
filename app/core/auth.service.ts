@@ -90,7 +90,7 @@ export class AuthService {
         localStorage.removeItem('oidc_nonce');
         let url: string = 'https://login.microsoftonline.com/' + this._config.domainName +
             '/oauth2/v2.0/logout?p=' + this._config.policy +
-            '&post_logout_redirect_uri=' + encodeURIComponent('http://azure.microsoft.com');
+            'post_logout_redirect_uri=' + encodeURIComponent('http://azure.microsoft.com');
         window.location.assign(url);
     }
 
