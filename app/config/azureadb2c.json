@@ -1,15 +1,15 @@
 {
-    "domainName": "<YOUR_DOMAIN_NAME>", // The domain of your tenant in a format like <TENANT>.onmicrosoft.com
-    "clientId": "<YOUR_APP_ID>", // The app id according to the new Azure portal blade
-    "responseType": "code+id_token", // either id_token or code+id_token
-    "redirectUrl": "<YOUR_REDIRECT_URL>", // One of the redirect urls you have specified in Azure portal
-    "responseMode": "fragment", // form_post would require a POST call from Azure AD, so leave fragment
-    "scope": "openid%20offline_access", // either openid or openid%20offline_access, the latter one is required for refresh tokens
-    "policy": "<YOUR_POLICY>", // The extensible framework policy to sign in and/or sign up
-    "prompt": "login", // the type of user interaction, currently only login is supported by Azure AD B2C
-    "localStorage": {
-        "idToken": "oidc_id_token", // The key for local storage to store the id_token
-        "nonce": "oidc_nonce", // The key for local storage to temporary store the nonce
-        "token": "oidc_token" // The key for local storage to store the retrieved token 
+    "domainName": "<DOMAIN>", 
+    "clientId": "<APP_ID>",
+    "responseType": "code+id_token",
+    "redirectUri": "<REDIRECT_URL>",
+    "responseMode": "fragment", 
+    "scope": "openid%20offline_access", 
+    "policy": "<POLICY>", 
+    "prompt": "login",
+    "localStorageKeys": {
+        "idToken": "oidc_id_token",
+        "nonce": "oidc_nonce", 
+        "token": "oidc_token" 
     } 
 }

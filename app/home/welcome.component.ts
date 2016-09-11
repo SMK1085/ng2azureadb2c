@@ -8,15 +8,13 @@ import { AuthService } from '../core/auth.service';
 })
 export class WelcomeComponent implements AfterViewInit {
     public pageTitle: string = 'Welcome';
-    private _authSvc: AuthService;
 
-    constructor(private _router: Router) {
-        this._authSvc = new AuthService(this._router, null);
-     }
+    constructor(private authSvc: AuthService,
+                private router: Router) { }
 
     ngAfterViewInit() {
-        if (!this._authSvc.isAuthenticated()) {
-            this._router.navigate(['/auth/login']);
+        if (!this.authSvc.isAuthenticated()) {
+            this.router.navigate(['/auth/login']);
         }
     }
 }

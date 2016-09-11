@@ -13,3 +13,5 @@ obj
 packages
 
 _test-output
+
+api/adb2c/*.json
