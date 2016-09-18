@@ -24,4 +24,5 @@ export class TitleComponent implements OnInit {
             this.userInfo = new AuthUser('', '');
         }
     }
+
 }

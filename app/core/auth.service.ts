@@ -97,7 +97,6 @@ export class AuthService {
     }
 
     public showLogin(state?: string, policy?: string) {
-        console.log('Show Login called.');
         if (this.config) {
             this.redirectToLogin(state, policy);
         } else {
@@ -133,12 +132,31 @@ export class AuthService {
         }
     }
 
+    public showLogoff(policy?: string) {
+        console.log('Show logoff called.');
+
+        if (this.config) {
+            this.redirectToLogout(policy);
+        } else {
+            // Load config first and perform redirect to auth server
+            this.configSvc.load()
+                .subscribe((c: AuthServiceConfig) => {
+                    this.config = c;
+                    this.redirectToLogout(policy);
+                }, (e: any) => {
+                    console.log(e);
+                });
+        }
+    }
+
     public logout(policy?: string) {
+        console.log('Logging out...');
+        console.log(this.config);
         if (this.config) {
             this.redirectToLogout(policy);
         } else {
             this.configSvc.load()
-                .do((c: AuthServiceConfig) => {
+                .subscribe((c: AuthServiceConfig) => {
                     this.config = c;
                     this.redirectToLogout(policy);
                 }, (e: any) => {
@@ -182,81 +200,99 @@ export class AuthService {
     }
 
     private redirectToLogout(policy?: string) {
+        let p: string = policy ? policy : this.config.policy;
         localStorage.removeItem(this.config.localStorageKeys.idToken);
         localStorage.removeItem(this.config.localStorageKeys.nonce);
         let url: string = 'https://login.microsoftonline.com/' + this.config.domainName +
-            '/oauth2/v2.0/logout?p=' + (policy) ? policy : this.config.policy +
-            'post_logout_redirect_uri=' + encodeURIComponent('http://azure.microsoft.com');
+            '/oauth2/v2.0/logout?p=' + p +
+            '&post_logout_redirect_uri=' + encodeURIComponent('http://azure.microsoft.com');
+        console.log('Redirecting to ' + url);
         window.location.assign(url);
     }
+
     private validateToken(res: any, policy?: string) {
         // Implements the required steps described in the OIDC reference
         // https://github.com/Azure/azure-content/blob/master/articles/active-directory-b2c/active-directory-b2c-reference-oidc.md
         let p = policy ? policy : this.config.policy;
         let idToken = this.jwtUtil.decodeToken(res.id_token);
-        // let idTokenHeader = this.jwtUtil.decodeTokenHeader(res.id_token);
+        let idTokenHeader = this.jwtUtil.decodeTokenHeader(res.id_token);
         let nonceExpected: string = localStorage.getItem(this.config.localStorageKeys.nonce);
 
         this.loadTokenSigningKeys(p)
             .subscribe((keys: TokenSigningKey[]) => {
                 // 1. Validate the signature
-                // Search for an open source library
-                // console.log(this.jwtUtil.getSignature(res.id_token));
-                // console.log(idToken);
+                let pubKey: string = keys.find((v) => { return v.kid === idTokenHeader.kid; }).n;
 
-                // 2. Validate the claims
-                if (idToken.nonce !== nonceExpected) {
-                    console.log({
-                        message: 'Nonce is not equal, assume token replay attack',
-                        clnt: nonceExpected,
-                        srv: idToken.nonce
+                this.verifySignature(res.id_token, idTokenHeader.alg, pubKey)
+                    .subscribe((vs: any) => {
+                        // Evaluate the validation result (vs)
+                        if (!vs.verified) {
+                            console.log('Signature invalid.');
+                            return;
+                        }
+
+                        // 2. Validate the claims
+                        if (idToken.nonce !== nonceExpected) {
+                            console.log({
+                                message: 'Nonce is not equal, assume token replay attack',
+                                clnt: nonceExpected,
+                                srv: idToken.nonce
+                            });
+                            return;
+                        }
+
+
+                        if (idToken.aud !== this.config.clientId) {
+                            console.log('Audience does not match application id');
+                            return;
+                        }
+
+                        let date = new Date(0);
+                        date.setUTCSeconds(idToken.exp);
+                        if (date < new Date()) {
+                            console.log('Token expired at ' + date.toISOString());
+                            return;
+                        }
+
+                        // 3. Store the token and log in the user
+                        localStorage.setItem(this.config.localStorageKeys.idToken, idToken);
+                        this.loggedIn = true;
+
+                        this.router.navigate(['/welcome']);
+
                     });
-                    return;
-                }
-
-
-                if (idToken.aud !== this.config.clientId) {
-                    console.log('Audience does not match application id');
-                    return;
-                }
-
-                let date = new Date(0);
-                date.setUTCSeconds(idToken.exp);
-                if (date < new Date()) {
-                    console.log('Token expired at ' + date.toISOString());
-                    return;
-                }
-
-                // 3. Store the token and log in the user
-                localStorage.setItem(this.config.localStorageKeys.idToken, idToken);
-                this.loggedIn = true;
-
-                this.router.navigate(['/welcome']);
-
             }, (e: any) => {
                 console.log(e);
             });
     }
 
+    private verifySignature(token: string, alg: string, nkey: string) {
+        let url: string = 'http://localhost:42902/api/v1/verifyjwtsig?token=' + token + '&alg=' + alg + '&n=' + nkey;
+
+        return this.http.get(url)
+            .map((r: Response) => { return r.json(); })
+            .catch(this.handleErrorTokenSigningKeys);
+    }
+
     private loadTokenSigningKeys(policy: string): Observable<TokenSigningKey[]> {
         // Azure AD B2C OpenID Connect metadata endpoint for the keys
         // Downloading the content from the MS server is a CORS request,
-        // this request is blocked by the browser.
-        // Download the json and save it in a file under api/adb2c/<policy>.json instead. 
+        // this request is blocked by modern browsers.
+        // We proxy it through our own API instead. 
         // let url: string = 'https://login.microsoftonline.com/' + this.config.domainName +
         //     '/discovery/v2.0/keys?p=' + policy;
-        let url: string = 'api/adb2c/' + policy + '.json';
+        let url: string = 'http://localhost:42902/api/v1/adb2c/' + this.config.domainName +
+            '/discovery/v2.0/keys?p=' + policy;
         let headers = new Headers({ 'Content-Type': 'application/json' });
         let options = new RequestOptions({ headers: headers });
 
         return this.http.get(url, options)
-                    .map(this.extractTokenSigningKeys)
-                    .catch(this.handleErrorTokenSigningKeys);
+            .map(this.extractTokenSigningKeys)
+            .catch(this.handleErrorTokenSigningKeys);
     }
 
     private extractTokenSigningKeys(res: Response) {
-        let body = res.json();
-        console.log(body);
+        let body: any = JSON.parse(res.json());
         return body.keys ? body.keys : [] as TokenSigningKey[];
     }
 

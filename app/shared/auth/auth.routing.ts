@@ -4,6 +4,7 @@ import { Routes,
 
 import { LoginComponent } from './login.component';
 import { LoginCallbackComponent } from './logincb.component';
+import { LogoutComponent } from './logout.component';
 
 const routes: Routes = [
     {
@@ -18,6 +19,10 @@ const routes: Routes = [
     {
         path: 'adcb',
         component: LoginCallbackComponent
+    },
+    {
+        path: 'logout',
+        component: LogoutComponent
     }
 ];
 
